@@ -9,10 +9,12 @@ module.exports = (sequelize) => {
         autoIncrement:true
       },
       title: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: true,
       },
       description: {
-        type: Sequelize.TEXT
+        type: Sequelize.TEXT,
+        allowNull: true,
       },
       estimatedTime: {
         type: Sequelize.STRING,
@@ -29,7 +31,8 @@ module.exports = (sequelize) => {
     }, { sequelize });
   
     Course.associate = (models) => {
-      Course.belongsTo(models.User, { 
+      Course.belongsTo(models.User, {
+        as: 'owner', // alias 
         foreignKey: {
           fieldName: 'userId',
           allowNull:false,
