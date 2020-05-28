@@ -201,7 +201,7 @@ router.post('/courses', [
     });
   
     // Set the status to 201 Created and end the response.
-   res.status(201).end(); 
+   res.location('/').status(201).end(); 
 }));
 
 // Send a PUT request to Update a course and return no content.
