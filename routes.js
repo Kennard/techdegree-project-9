@@ -58,18 +58,20 @@ function asyncHandler(cb){
     }
   };
 
+
 // *** User Routes ***
 
 // Send a GET request for the currently authenticated user.
   router.get('/users', authenticateUser, asyncHandler(async(req, res) => {  
     const user = req.currentUser;  
     res.json({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      emailAddress: user.emailAddress,
-    });
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailAddress: user.emailAddress,
+     });
   }));
-    
+
+
 // Send a POST request to creates a new user and validate each field.
  router.post('/users', [
   check('firstName')
@@ -79,14 +81,30 @@ function asyncHandler(cb){
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please provide a value for "lastName"'),
   check('emailAddress')
-    .exists({ checkNull: true, checkFalsy: true })
-    .withMessage('Please provide a value for "emailAddress"'),
+    .exists()
+    .withMessage('Please provide a value for "emailAddress"')
+    // Validate that the provided email address value is in fact a
+    // valid email address using isEmail.
+    .isEmail()
+    .withMessage('Email must be a valid "email address" ')
+    // Validate email address isn't already associated 
+    // with an existing user record.
+    .custom(async(value, { req }) => {  
+      const email = await models.User.findOne({ 
+        where: {emailAddress: value} 
+      }); 
+        if(value === email.emailAddress){   
+          throw new Error('Email already exist!');         
+        }else{
+          return value;
+        }
+    }),
   check('password')
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please provide a value for "password"') 
   ], asyncHandler(async(req, res) => {
 
-  const errors = validationResult(req);
+    const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
       // Use the Array `map()` method to get a list of error messages.
@@ -94,7 +112,8 @@ function asyncHandler(cb){
       // Returns validation errors to the client.
       return res.status(400).json({ errors: errorMessages });
     }
-     
+
+    
   // Hash the new user's password. 
   const password = bcryptjs.hashSync(req.body.password);
 
@@ -116,10 +135,12 @@ function asyncHandler(cb){
 // Send a GET request that returns a list of course.
 router.get('/courses', asyncHandler(async(req, res) => {  
    const courses = await models.Course.findAll({
+    attributes: { exclude: ['createdAt', 'updatedAt'] },
     include: [
       {
         model: models.User,
         as: 'owner',
+        attributes: { exclude: ['createdAt', 'updatedAt', 'password'] },
       }
     ],
   });
@@ -134,15 +155,17 @@ router.get('/courses', asyncHandler(async(req, res) => {
 // Send a GET request that returns a course.
 router.get('/courses/:id', asyncHandler(async(req, res) => {  
   const course = await models.Course.findByPk(req.params.id, {
+    attributes: { exclude: ['createdAt', 'updatedAt'] },
     include: [
         {
           model: models.User,
           as: 'owner',
+          attributes: { exclude: ['createdAt', 'updatedAt', 'password'] },
         }
       ],
   });
   if(course){
-      res.status(200).json(course);
+      res.status(200).json({course});
   } else{
     res.status(404).json({message: "Course does not exist" }); 
   }
@@ -200,7 +223,9 @@ router.put('/courses/:id',[
     return res.status(400).json({ errors: errorMessages });
   }
   const course = await models.Course.findByPk(req.params.id);
-  if(course) {
+  const user = req.currentUser;
+
+  if(course.userId === user.id) {
     await models.Course.update({    
         title: req.body.title,
         description: req.body.description,
@@ -208,20 +233,26 @@ router.put('/courses/:id',[
         materialsNeeded: req.body.materialsNeeded
       }, { where: { id: req.params.id} 
     });
+    res.status(204).end();
+  } else {
+    res.status(403).json("User does not own course"); 
   }
-  res.status(204).end(); 
+   
 }));
 
 // Send a DELETE request to delete a course and return no content.
 router.delete('/courses/:id', authenticateUser, asyncHandler(async(req, res) => { 
+  
   const course = await models.Course.findByPk(req.params.id);
-  if(course){
-    await models.Course.destroy({ 
-      where: { id: req.params.id} 
-    });
-   res.status(204).end(); 
-  } else{
-    res.status(404).json({message: "Course does not exist" }); 
+  const user = req.currentUser;
+  
+  if(course.userId === user.id) {
+      await models.Course.destroy({ 
+        where: { id: req.params.id} 
+      });
+    res.status(204).end(); 
+  }else{
+    res.status(403).json("User does not own course"); 
   }
 
 }));
