@@ -19,7 +19,7 @@ module.exports = (sequelize) => {
       emailAddress: {
         type: Sequelize.STRING,
         allowNull: false,
-        validate: {
+        validate: { // ref ** 
           isEmail: true
         },
         unique: {
@@ -45,3 +45,5 @@ module.exports = (sequelize) => {
   
     return User;
   };
+
+   // ** ref: statckoverflow/questions/16356856/

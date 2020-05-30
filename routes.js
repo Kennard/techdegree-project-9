@@ -158,7 +158,6 @@ router.get('/courses/:id', asyncHandler(async(req, res) => {
 }));
 
 
-
 // Send a POST request to create a new course.
 router.post('/courses', [
   check('title')
