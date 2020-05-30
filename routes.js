@@ -67,7 +67,7 @@ function asyncHandler(cb){
     res.json({
         firstName: user.firstName,
         lastName: user.lastName,
-        emailAddress: user.emailAddress,
+        emailAddress: user.emailAddress
      });
   }));
 
@@ -81,24 +81,10 @@ function asyncHandler(cb){
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please provide a value for "lastName"'),
   check('emailAddress')
-    .exists()
+    .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please provide a value for "emailAddress"')
-    // Validate that the provided email address value is in fact a
-    // valid email address using isEmail.
     .isEmail()
-    .withMessage('Email must be a valid "email address" ')
-    // Validate email address isn't already associated 
-    // with an existing user record.
-    .custom(async(value, { req }) => {  
-      const email = await models.User.findOne({ 
-        where: {emailAddress: value} 
-      }); 
-        if(value === email.emailAddress){   
-          throw new Error('Email already exist!');         
-        }else{
-          return value;
-        }
-    }),
+    .withMessage('Email must be a valid "email address" '),
   check('password')
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please provide a value for "password"') 
@@ -113,8 +99,7 @@ function asyncHandler(cb){
       return res.status(400).json({ errors: errorMessages });
     }
 
-    
-  // Hash the new user's password. 
+  // Hash the new 
   const password = bcryptjs.hashSync(req.body.password);
 
   const users = await models.User.create({    
@@ -122,8 +107,9 @@ function asyncHandler(cb){
       lastName: req.body.lastName,
       emailAddress: req.body.emailAddress,
       password
-      });
-  
+    });
+     
+
    // Set the status to 201 Created and end the response.
    res.status(201).end(); 
     
