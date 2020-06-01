@@ -111,7 +111,7 @@ function asyncHandler(cb){
      
 
    // Set the status to 201 Created and end the response.
-   res.status(201).end(); 
+  res.location('/').status(201).end(); 
     
   }));
 
@@ -184,9 +184,9 @@ router.post('/courses', [
       materialsNeeded: req.body.materialsNeeded,
       userId: req.body.userId
     });
-  
-    // Set the status to 201 Created and end the response.
-   res.location('/').status(201).end(); 
+
+  // Set the location header to the course URI and set status to 201 Created and end the response.
+   res.location('/courses/'+ course.id).status(201).end(); 
 }));
 
 // Send a PUT request to Update a course and return no content.
